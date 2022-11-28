@@ -17,10 +17,14 @@ void qBezierInterpolation(int** image,  std::vector<double> p0, std::vector<doub
     {
         double x1 = p0[0];
         double y1 = p0[1];
-        double x2 = p1[0];
-        double y2 = p1[1];
+        
         double x3 = p2[0];
         double y3 = p2[1];
+
+        // calculating b
+        double t = .5;
+        double x2 = (p1[0] - (1 - t) * (1 - t) * x1 - t * t * x3)/(2*(1-t)*t);
+        double y2 = (p1[1] - (1 - t) * (1 - t) * y1 - t * t * y3) / (2 * (1 - t) * t);
 
         // The Green Line
        double xa = getPt(x1, x2, i);
@@ -44,11 +48,20 @@ int main() {
 	for (int i = 0; i < size; i++) {
         image[i] = new int[size];
 		for (int j = 0; j < size; j++) {
-			image[i][j] = 0;
+			image[i][j] = 2;
 		}
 	}
     
+
+
     qBezierInterpolation(image, cp[0], cp[1], cp[2]);
+
+    // color control points
+    for (int i = 0; i < cp.size(); i++) {
+        int x = (int) cp[i][0];
+        int y = (int) cp[i][1];
+        image[x][y] = 0;
+    }
 
     //std::ofstream outImg1("control_points.pbm");
     //outImg1 << "P1\n" << size << " " << size << std::endl;
@@ -69,8 +82,8 @@ int main() {
 
     //outImg1.close();
 
-    std::ofstream outImg("qb_interpolation.pbm");
-    outImg << "P1\n" << size << " " << size << std::endl;
+    std::ofstream outImg("qb_interpolation.pgm");
+    outImg << "P2\n" << size << " " << size << std::endl << 2 << std::endl;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
             outImg << image[i][j]<< " ";
