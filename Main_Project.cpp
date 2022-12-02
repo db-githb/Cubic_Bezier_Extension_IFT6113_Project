@@ -69,7 +69,6 @@ std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vect
     std::vector<std::vector<double>> bVec(4);
 
     bVec[0] = p0;
-    // bVec[2] = p2;
     bVec[3] = p2;
 
     double temp = 1 - t;
@@ -79,10 +78,13 @@ std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vect
     double tcb = t * t * t;
     double tempSqT = tempSq * t;
 
-    /*bVec[1] = { (p1[0] - p0[0] * tempCb - 3 * p2[0] * temptsq - p3[0] * tcb) / (3 * tempSqT),
-              (p1[1] - p0[1] * tempCb - 3 * p2[1] * temptsq - p3[1] * tcb) / (3 * tempSqT) };*/
+    bVec[1] = { 0,0 };
+    for (int i = 0; i < 2; i++) {
+        bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p1[i] + t*p0[i];
+    }
 
-    bVec[1] = { (1.0 / 2.0) * ((5.0 / 3.0) * p1[0] + (2.0 / 3.0) * p0[0] - (1.0 / 3.0) * p2[0]), (1.0 / 2.0) * ((5.0 / 3.0) * p1[1] + (2.0 / 3.0) * p0[1] - (1.0 / 3.0) * p2[1]) };
+    /*bVec[1] = { (1.0 / 2.0) * ((5.0 / 3.0) * p1[0] + (2.0 / 3.0) * p0[0] - (1.0 / 3.0) * p2[0]),
+                (1.0 / 2.0) * ((5.0 / 3.0) * p1[1] + (2.0 / 3.0) * p0[1] - (1.0 / 3.0) * p2[1]) };*/
     bVec[2] = { bVec[1][0] + (p1[0] - p0[0]), bVec[1][1] + (p1[1] - p0[1]) };
 
     return bVec;
@@ -124,8 +126,8 @@ int main() {
 			image[i][j] = 2;
 		}
 	}
-    double t1 = .5; // maxCurvature(cp[0], cp[1], cp[2]);
-    double t2 = .5; //maxCurvature(cp[1], cp[2], cp[3]); // .431378 seems ideal!!!
+    double t1 = maxCurvature(cp[0], cp[1], cp[2]);
+    double t2 = maxCurvature(cp[1], cp[2], cp[3]); // .431378 seems ideal!!!
     std::vector<std::vector<double>> bVec1 = cBezierParams(cp[0], cp[1], cp[2], t1);
     std::vector<std::vector<double>> bVec2 = cBezierParams(cp[1], cp[2], cp[3], t2);
     
