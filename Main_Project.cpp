@@ -79,13 +79,15 @@ std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vect
     double tempSqT = tempSq * t;
 
     bVec[1] = { 0,0 };
+    bVec[2] = { 0,0 };
     for (int i = 0; i < 2; i++) {
-        bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p1[i] + t*p0[i];
+        bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p2[i] + t*p0[i];
+        bVec[2][i] = { bVec[1][i] + (p2[i] - p0[i])};
     }
 
-    /*bVec[1] = { (1.0 / 2.0) * ((5.0 / 3.0) * p1[0] + (2.0 / 3.0) * p0[0] - (1.0 / 3.0) * p2[0]),
-                (1.0 / 2.0) * ((5.0 / 3.0) * p1[1] + (2.0 / 3.0) * p0[1] - (1.0 / 3.0) * p2[1]) };*/
-    bVec[2] = { bVec[1][0] + (p1[0] - p0[0]), bVec[1][1] + (p1[1] - p0[1]) };
+    // less rounded option
+    /*bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p1[i] + t*p0[i];
+     bVec[2][i] = { bVec[1][i] + (p1[i] - p0[i])};*/
 
     return bVec;
 }
