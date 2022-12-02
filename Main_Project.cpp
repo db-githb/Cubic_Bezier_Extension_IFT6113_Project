@@ -64,40 +64,8 @@ std::vector<double> qBezierInterpolation(std::vector<std::vector<double>> bVec, 
        return { x,y };
 }
 
-//std::vector<double> ci(std::vector<std::vector<double>> bVec, double t) {
-//        // The Green Lines
-//        double xa = getPt(bVec[0][0], bVec[1][0], t);
-//        double ya = getPt(bVec[0][1], bVec[1][1], t);
-//        double xb = getPt(bVec[1][0], bVec[2][0], t);
-//        double yb = getPt(bVec[1][1], bVec[2][1], t);
-//        double xc = getPt(bVec[2][0], bVec[3][0], t);
-//        double yc = getPt(bVec[2][1], bVec[3][1], t);
-//        
-//        // The Blue Line
-//        double xm = getPt(xa, xb, t);
-//        double ym = getPt(ya, yb, t);
-//        double xn = getPt(xb, xc, t);
-//        double yn = getPt(yb, yc, t);
-//
-//        // The Black Dot
-//        double x = getPt(xm, xn, t);
-//        double y = getPt(ym, yn, t);
-//
-//        return { x,y };
-//}
-
-std::vector<int> blend(std::vector<std::vector<double>> bVec1, std::vector<std::vector<double>> bVec2, double t, double t1, double t2) {
-    std::vector<double> p1 = qBezierInterpolation(bVec1, (1-t1)*t + t1);
-    std::vector<double> p2 = qBezierInterpolation(bVec2, t * t2);
-
-    double x = cos(M_PI_2 * t) * cos(M_PI_2 * t) * p1[0] + sin(M_PI_2 * t) * sin(M_PI_2 * t) * p2[0];
-    double y = cos(M_PI_2 * t) * cos(M_PI_2 * t) * p1[1] + sin(M_PI_2 * t) * sin(M_PI_2 * t) * p2[1];
-
-    return { (int) floor(x), (int) floor(y) };
-}
-
 std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vector<double> p1, std::vector<double> p2, double t) {
-    
+
     std::vector<std::vector<double>> bVec(4);
 
     bVec[0] = p0;
@@ -110,12 +78,12 @@ std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vect
     double temptsq = temp * t * t;
     double tcb = t * t * t;
     double tempSqT = tempSq * t;
-    
+
     /*bVec[1] = { (p1[0] - p0[0] * tempCb - 3 * p2[0] * temptsq - p3[0] * tcb) / (3 * tempSqT),
               (p1[1] - p0[1] * tempCb - 3 * p2[1] * temptsq - p3[1] * tcb) / (3 * tempSqT) };*/
 
-    bVec[1] = { (1.0 / 2.0) * ((5.0/3.0) * p1[0] + (2.0/3.0)*p0[0] - (1.0/3.0)* p2[0]), (1.0 / 2.0) * ((5.0 / 3.0) * p1[1] + (2.0 / 3.0) * p0[1] - (1.0 / 3.0) * p2[1]) };
-    bVec[2] = { bVec[1][0] + (p1[0]-p0[0]), bVec[1][1] + (p1[1] - p0[1]) };
+    bVec[1] = { (1.0 / 2.0) * ((5.0 / 3.0) * p1[0] + (2.0 / 3.0) * p0[0] - (1.0 / 3.0) * p2[0]), (1.0 / 2.0) * ((5.0 / 3.0) * p1[1] + (2.0 / 3.0) * p0[1] - (1.0 / 3.0) * p2[1]) };
+    bVec[2] = { bVec[1][0] + (p1[0] - p0[0]), bVec[1][1] + (p1[1] - p0[1]) };
 
     return bVec;
 }
@@ -134,6 +102,16 @@ std::vector<double> cBezierInterpolation(std::vector<std::vector<double>> bVec, 
 
     return { x,y };
 
+}
+
+std::vector<int> blend(std::vector<std::vector<double>> bVec1, std::vector<std::vector<double>> bVec2, double t, double t1, double t2) {
+    std::vector<double> p1 = cBezierInterpolation(bVec1, (1-t1)*t + t1);
+    std::vector<double> p2 = cBezierInterpolation(bVec2, t * t2);
+
+    double x = cos(M_PI_2 * t) * cos(M_PI_2 * t) * p1[0] + sin(M_PI_2 * t) * sin(M_PI_2 * t) * p2[0];
+    double y = cos(M_PI_2 * t) * cos(M_PI_2 * t) * p1[1] + sin(M_PI_2 * t) * sin(M_PI_2 * t) * p2[1];
+
+    return { (int) floor(x), (int) floor(y) };
 }
 
 int main() {
@@ -156,10 +134,10 @@ int main() {
         image[(int)p1[0]][(int)p1[1]] = 1;
     }
 
-    /*for (double t = 0; t <=1.0; t += .001) {
+    for (double t = 0; t <=1.0; t += .001) {
          std::vector<int> point = blend(bVec1, bVec2, t, t1, t2);
          image[point[0]][point[1]] = 1;
-    }*/
+    }
 
     for (double t = 0; t <= 1; t += .001) {
         std::vector<double> p2 = cBezierInterpolation(bVec2, t);
