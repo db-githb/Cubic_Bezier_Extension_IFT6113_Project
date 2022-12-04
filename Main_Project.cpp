@@ -81,13 +81,13 @@ std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vect
     bVec[1] = { 0,0 };
     bVec[2] = { 0,0 };
     for (int i = 0; i < 2; i++) {
-        bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p2[i] + t*p0[i];
-        bVec[2][i] = { bVec[1][i] + (p2[i] - p0[i])};
+        bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p1[i] + t*p0[i];
+        bVec[2][i] = { bVec[1][i] + (p1[i] - p0[i])};
     }
 
     // less rounded option
-    /*bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p1[i] + t*p0[i];
-     bVec[2][i] = { bVec[1][i] + (p1[i] - p0[i])};*/
+    /*bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p2[i] + t*p0[i];
+     bVec[2][i] = { bVec[1][i] + (p2[i] - p0[i])};*/
 
     return bVec;
 }
@@ -118,34 +118,104 @@ std::vector<int> blend(std::vector<std::vector<double>> bVec1, std::vector<std::
     return { (int) floor(x), (int) floor(y) };
 }
 
-int main() {
-    std::vector<std::vector<double>> cp = { {42, 42}, { 84,84 }, { 126, 42 }, { 168, 126 } };
-	const int size = 256;
-	int** image = new int*[size];
-	for (int i = 0; i < size; i++) {
-        image[i] = new int[size];
-		for (int j = 0; j < size; j++) {
+int main(int argc, char* argv[])
+{
+    if (argc != 2) {
+        std::cout << "Usage: IFT6113_Project.exe curveControlPointsFileName" << std::endl;
+        return 1;
+    }
+
+    // get curve data from file
+    std::string path = "Data/";
+    std::string fileName = path.append(argv[1]);
+
+    std::ifstream cp_file("Data/test.txt");
+    bool isOpen = cp_file.is_open(); 
+
+    int imgHeight;
+    int imgWidth;
+
+    cp_file >> imgHeight;
+    cp_file >> imgWidth;
+
+    int numCurves;
+    cp_file >> numCurves;
+
+    int option;
+    cp_file >> option;
+
+    int numPoints;
+    cp_file >> numPoints;
+
+    std::vector<double> point;
+    double x;
+    double y;
+    std::vector<std::vector<double>> cp;
+
+    for(int i = 0; i < numPoints; i++){
+        cp_file >> x;
+        cp_file >> y;
+        point = { x,y };
+        cp.push_back(point);
+    }
+
+    // std::vector<std::vector<double>> cp = { {42, 42}, { 84,84 }, { 64, 42 }, { 168, 126 }, {84, 235} };
+    /*const int height = 256;
+    const int width = 256;*/
+
+    // intialize bitmap
+	int** image = new int*[imgHeight];
+	for (int i = 0; i < imgHeight; i++) {
+        image[i] = new int[imgWidth];
+		for (int j = 0; j < imgWidth; j++) {
 			image[i][j] = 2;
 		}
 	}
-    double t1 = maxCurvature(cp[0], cp[1], cp[2]);
-    double t2 = maxCurvature(cp[1], cp[2], cp[3]); // .431378 seems ideal!!!
-    std::vector<std::vector<double>> bVec1 = cBezierParams(cp[0], cp[1], cp[2], t1);
-    std::vector<std::vector<double>> bVec2 = cBezierParams(cp[1], cp[2], cp[3], t2);
     
-    for (double t = 0; t <= 1; t += .001) {
-        std::vector<double> p1 = cBezierInterpolation(bVec1, t);
-        image[(int)p1[0]][(int)p1[1]] = 1;
-    }
+    for (int i = 1; i < cp.size() - 2; i++) {
+        
+        // force position of max curvature at middle curve control points (only for quadratic)
+        double t1 = maxCurvature(cp[i-1], cp[i], cp[i+1]);
+        double t2 = maxCurvature(cp[i], cp[i+1], cp[i+2]); // .431378 seems ideal!!!
 
-    for (double t = 0; t <=1.0; t += .001) {
-         std::vector<int> point = blend(bVec1, bVec2, t, t1, t2);
-         image[point[0]][point[1]] = 1;
-    }
+        // compute bezier control points
+        std::vector<std::vector<double>> bVec1 = cBezierParams(cp[i-1], cp[i], cp[i+1], t1);
+        std::vector<std::vector<double>> bVec2 = cBezierParams(cp[i], cp[i+1], cp[i+2], t2);
 
-    for (double t = 0; t <= 1; t += .001) {
-        std::vector<double> p2 = cBezierInterpolation(bVec2, t);
-        image[(int)p2[0]][(int)p2[1]] = 1;
+        // show bezier control points
+       /* for (int i = 0; i < bVec1.size(); i++) {
+            int x1 = (int)bVec1[i][0];
+            int y1 = (int)bVec1[i][1];
+            image[x1][y1] = 0;
+
+            int x2 = (int)bVec2[i][0];
+            int y2 = (int)bVec2[i][1];
+            image[x2][y2] = 0;
+        }*/
+
+        // loop for curve between first two curve control points (not blended)
+        if (i == 1) {
+            for (double t = 0; t <= t1; t += .001) {
+                std::vector<double> p1 = cBezierInterpolation(bVec1, t);
+                image[(int)p1[0]][(int)p1[1]] = 1;
+            }
+        }
+
+        // loop for all blended curves (i.e. everything but first and last curve)
+        for (double t = 0; t <= 1.0; t += .001) {
+            std::vector<int> point = blend(bVec1, bVec2, t, t1, t2);
+            image[point[0]][point[1]] = 1;
+        }
+
+        // loop for curve between last two curve control points (not blended)
+        if (i == cp.size() - 3) {
+            for (double t = t2; t <= 1; t += .001) {
+                std::vector<double> p2 = cBezierInterpolation(bVec2, t);
+                image[(int)p2[0]][(int)p2[1]] = 1;
+            }
+        }
+
+        
     }
 
     // color curve control points
@@ -155,16 +225,6 @@ int main() {
         image[x][y] = 0;
     }
 
-    // bezier control points
-    for (int i = 0; i < bVec1.size(); i++) {
-        int x1 = (int)bVec1[i][0];
-        int y1 = (int)bVec1[i][1];
-        image[x1][y1] = 0;
-
-        int x2 = (int)bVec2[i][0];
-        int y2 = (int)bVec2[i][1];
-        image[x2][y2] = 0;
-    }
     //std::ofstream outImg1("control_points.pbm");
     //outImg1 << "P1\n" << size << " " << size << std::endl;
     //for (int i = 0; i < size; i++) {
@@ -184,10 +244,11 @@ int main() {
 
     //outImg1.close();
 
+    std::cout << "saving pgm file";
     std::ofstream outImg("cb_interpolation.pgm");
-    outImg << "P2\n" << size << " " << size << std::endl << 2 << std::endl;
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
+    outImg << "P2\n" << imgHeight << " " << imgWidth << std::endl << 2 << std::endl;
+    for (int i = 0; i < imgHeight; i++) {
+        for (int j = 0; j < imgWidth; j++) {
             outImg << image[i][j]<< " ";
        }
         outImg << std::endl;
