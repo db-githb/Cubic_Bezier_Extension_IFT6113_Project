@@ -52,14 +52,20 @@ std::vector<std::vector<double>> qBezierParams(std::vector<double> p0, std::vect
 // from https://stackoverflow.com/questions/785097/how-do-i-implement-a-b%C3%A9zier-curve-in-c
 std::vector<double> qBezierInterpolation(std::vector<std::vector<double>> bVec, double t) {
         // The Green Line
-       double xa = getPt(bVec[0][0], bVec[1][0], t);
-       double ya = getPt(bVec[0][1], bVec[1][1], t);
-       double xb = getPt(bVec[1][0], bVec[2][0], t);
-       double yb = getPt(bVec[1][1], bVec[2][1], t);
+       //double xa = getPt(bVec[0][0], bVec[1][0], t);
+       //double ya = getPt(bVec[0][1], bVec[1][1], t);
+       //double xb = getPt(bVec[1][0], bVec[2][0], t);
+       //double yb = getPt(bVec[1][1], bVec[2][1], t);
 
-        // The Black Dot
-       double x = getPt(xa, xb, t);
-       double y = getPt(ya, yb, t);
+       // // The Black Dot
+       //double x = getPt(xa, xb, t);
+       //double y = getPt(ya, yb, t);
+       
+       double temp = 1 - t;
+       double tempSq = temp * temp;
+
+       double x = bVec[0][0] * tempSq + 2 * bVec[1][0] * temp*t + bVec[2][0] * t*t;
+       double y = bVec[0][1] * tempSq + 2 * bVec[1][1] * temp*t + bVec[2][1] * t*t;
 
        return { x,y };
 }
@@ -249,12 +255,17 @@ int main(int argc, char* argv[])
         
     }
 
-    // color curve control points
+    // color curve control points NOT CHECKING FOR IMAGE EDGE
     for (int i = 0; i < ctrlP.size(); i++) {
         int x = (int) ctrlP[i][0];
         int y = (int) ctrlP[i][1];
-        cImage[x][y] = 0;
-        qImage[x][y] = 0;
+
+        for (int xOff = -1; xOff < 2; xOff++) {
+            for (int yOff = -1; yOff < 2; yOff++) {
+                cImage[x + xOff][y+ yOff] = 0; // BE CAREFUL HERE
+                qImage[x + xOff][y + yOff] = 0; // BE CAREFUL HERE
+            }
+        }
     }
 
     //std::ofstream outImg1("control_points.pbm");
@@ -276,16 +287,21 @@ int main(int argc, char* argv[])
 
     //outImg1.close();
 
-    std::cout << "saving pgm file";
-    std::ofstream cOutImg("interpolation_cb.pgm");
-    std::ofstream qOutImg("interpolation_qb.pgm");
+    // color map
+    std::vector<std::vector<int>> color_map = { { 0,0,0 }, { 255,0,0 }, {255, 255, 255} };
 
-    cOutImg << "P2\n" << size << " " << size << std::endl << 2 << std::endl;
-    qOutImg << "P2\n" << size << " " << size << std::endl << 2 << std::endl;
+    std::cout << "saving pgm file";
+    std::ofstream cOutImg("interpolation_cb.ppm");
+    std::ofstream qOutImg("interpolation_qb.ppm");
+
+    cOutImg << "P3\n" << size << " " << size << std::endl << 255 << std::endl;
+    qOutImg << "P3\n" << size << " " << size << std::endl << 255 << std::endl;
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            cOutImg << cImage[i][j]<< " ";
-            qOutImg << qImage[i][j] << " ";
+            for (int c = 0; c < 3; c++) {
+                cOutImg << color_map[cImage[i][j]][c] << " ";
+                qOutImg << color_map[qImage[i][j]][c] << " ";
+            }
        }
         cOutImg << std::endl;
         qOutImg << std::endl;
