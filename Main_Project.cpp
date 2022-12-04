@@ -156,7 +156,10 @@ int main(int argc, char* argv[])
     cp_file >> imgHeight;
     cp_file >> imgWidth;
 
+    // rescale all images to 255 x 255 for faster write to file
     size = (imgHeight > imgWidth) ? imgHeight : imgWidth;
+    double scale = 256.0 / size;
+    size = 256;
 
     int numCurves;
     cp_file >> numCurves;
@@ -175,7 +178,7 @@ int main(int argc, char* argv[])
     for(int i = 0; i < numPoints; i++){
         cp_file >> x;
         cp_file >> y;
-        point = { x,y };
+        point = { x*scale,y*scale };
         ctrlP.push_back(point);
     }
 
