@@ -12,7 +12,7 @@ double cubicRoot(double d, double c, double b, double a) {
 }
 
 // forces max curvature at Pi
-double maxCurvature(std::vector<double> p0, std::vector<double> p1, std::vector<double> p2) {
+double getReferenceT(std::vector<double> p0, std::vector<double> p1, std::vector<double> p2) {
 
     std::vector<double> v0 = { p0[0] - p1[0], p0[1] - p1[1] };
     std::vector<double> v2 = { p2[0] - p1[0], p2[1] - p1[1] };
@@ -109,8 +109,19 @@ std::vector<double> cBezierInterpolation(std::vector<std::vector<double>> bVec, 
 }
 
 std::vector<int> blend(std::vector<std::vector<double>> bVec1, std::vector<std::vector<double>> bVec2, double t, double t1, double t2) {
-    std::vector<double> p1 = cBezierInterpolation(bVec1, (1-t1)*t + t1);
-    std::vector<double> p2 = cBezierInterpolation(bVec2, t * t2);
+    
+    std::vector<double> p1;
+    std::vector<double> p2;
+
+    if (bVec1.size() == 4) {
+        p1 = cBezierInterpolation(bVec1, (1 - t1) * t + t1);
+        p2 = cBezierInterpolation(bVec2, t * t2);
+    }
+    else {
+        p1 = qBezierInterpolation(bVec1, (1 - t1) * t + t1);
+        p2 = qBezierInterpolation(bVec2, t * t2);
+    }
+    
 
     double x = cos(M_PI_2 * t) * cos(M_PI_2 * t) * p1[0] + sin(M_PI_2 * t) * sin(M_PI_2 * t) * p2[0];
     double y = cos(M_PI_2 * t) * cos(M_PI_2 * t) * p1[1] + sin(M_PI_2 * t) * sin(M_PI_2 * t) * p2[1];
@@ -129,14 +140,17 @@ int main(int argc, char* argv[])
     std::string path = "Data/";
     std::string fileName = path.append(argv[1]);
 
-    std::ifstream cp_file("Data/test.txt");
+    std::ifstream cp_file(fileName);
     bool isOpen = cp_file.is_open(); 
 
     int imgHeight;
     int imgWidth;
+    int size;
 
     cp_file >> imgHeight;
     cp_file >> imgWidth;
+
+    size = (imgHeight > imgWidth) ? imgHeight : imgWidth;
 
     int numCurves;
     cp_file >> numCurves;
@@ -150,37 +164,45 @@ int main(int argc, char* argv[])
     std::vector<double> point;
     double x;
     double y;
-    std::vector<std::vector<double>> cp;
+    std::vector<std::vector<double>> ctrlP;
 
     for(int i = 0; i < numPoints; i++){
         cp_file >> x;
         cp_file >> y;
         point = { x,y };
-        cp.push_back(point);
+        ctrlP.push_back(point);
     }
 
     // std::vector<std::vector<double>> cp = { {42, 42}, { 84,84 }, { 64, 42 }, { 168, 126 }, {84, 235} };
     /*const int height = 256;
     const int width = 256;*/
 
-    // intialize bitmap
-	int** image = new int*[imgHeight];
-	for (int i = 0; i < imgHeight; i++) {
-        image[i] = new int[imgWidth];
-		for (int j = 0; j < imgWidth; j++) {
-			image[i][j] = 2;
+    // intialize cubic bitmap and quadratic bitmap
+	int** cImage = new int*[size];
+    int** qImage = new int* [size];
+
+	for (int i = 0; i < size; i++) {
+        cImage[i] = new int[size];
+        qImage[i] = new int[size];
+		for (int j = 0; j < size; j++) {
+			cImage[i][j] = 2;
+            qImage[i][j] = 2;
 		}
 	}
     
-    for (int i = 1; i < cp.size() - 2; i++) {
+    for (int i = 1; i < ctrlP.size() - 2; i++) {
         
         // force position of max curvature at middle curve control points (only for quadratic)
-        double t1 = maxCurvature(cp[i-1], cp[i], cp[i+1]);
-        double t2 = maxCurvature(cp[i], cp[i+1], cp[i+2]); // .431378 seems ideal!!!
+        double t1 = getReferenceT(ctrlP[i-1], ctrlP[i], ctrlP[i+1]);
+        double t2 = getReferenceT(ctrlP[i], ctrlP[i+1], ctrlP[i+2]); // .431378 seems ideal!!!
 
-        // compute bezier control points
-        std::vector<std::vector<double>> bVec1 = cBezierParams(cp[i-1], cp[i], cp[i+1], t1);
-        std::vector<std::vector<double>> bVec2 = cBezierParams(cp[i], cp[i+1], cp[i+2], t2);
+        // cubic - compute bezier control points
+        std::vector<std::vector<double>> cbVec1 = cBezierParams(ctrlP[i-1], ctrlP[i], ctrlP[i+1], t1);
+        std::vector<std::vector<double>> cbVec2 = cBezierParams(ctrlP[i], ctrlP[i+1], ctrlP[i+2], t2);
+
+        // quadratic - compute bezier control points
+        std::vector<std::vector<double>> qbVec1 = qBezierParams(ctrlP[i - 1], ctrlP[i], ctrlP[i + 1], t1);
+        std::vector<std::vector<double>> qbVec2 = qBezierParams(ctrlP[i], ctrlP[i + 1], ctrlP[i + 2], t2);
 
         // show bezier control points
        /* for (int i = 0; i < bVec1.size(); i++) {
@@ -196,22 +218,31 @@ int main(int argc, char* argv[])
         // loop for curve between first two curve control points (not blended)
         if (i == 1) {
             for (double t = 0; t <= t1; t += .001) {
-                std::vector<double> p1 = cBezierInterpolation(bVec1, t);
-                image[(int)p1[0]][(int)p1[1]] = 1;
+                std::vector<double> cp1 = cBezierInterpolation(cbVec1, t);
+                std::vector<double> qp1 = qBezierInterpolation(qbVec1, t);
+
+                cImage[(int)cp1[0]][(int)cp1[1]] = 1;
+                qImage[(int)qp1[0]][(int)qp1[1]] = 1;
             }
         }
 
         // loop for all blended curves (i.e. everything but first and last curve)
         for (double t = 0; t <= 1.0; t += .001) {
-            std::vector<int> point = blend(bVec1, bVec2, t, t1, t2);
-            image[point[0]][point[1]] = 1;
+            std::vector<int> cPoint = blend(cbVec1, cbVec2, t, t1, t2);
+            cImage[cPoint[0]][cPoint[1]] = 1;
+
+            std::vector<int> qPoint = blend(qbVec1, qbVec2, t, t1, t2);
+            qImage[qPoint[0]][qPoint[1]] = 1;
         }
 
         // loop for curve between last two curve control points (not blended)
-        if (i == cp.size() - 3) {
+        if (i == ctrlP.size() - 3) {
             for (double t = t2; t <= 1; t += .001) {
-                std::vector<double> p2 = cBezierInterpolation(bVec2, t);
-                image[(int)p2[0]][(int)p2[1]] = 1;
+                std::vector<double> cp2 = cBezierInterpolation(cbVec2, t);
+                cImage[(int)cp2[0]][(int)cp2[1]] = 1;
+
+                std::vector<double> qp2 = cBezierInterpolation(cbVec2, t);
+                qImage[(int)qp2[0]][(int)qp2[1]] = 1;
             }
         }
 
@@ -219,10 +250,11 @@ int main(int argc, char* argv[])
     }
 
     // color curve control points
-    for (int i = 0; i < cp.size(); i++) {
-        int x = (int) cp[i][0];
-        int y = (int) cp[i][1];
-        image[x][y] = 0;
+    for (int i = 0; i < ctrlP.size(); i++) {
+        int x = (int) ctrlP[i][0];
+        int y = (int) ctrlP[i][1];
+        cImage[x][y] = 0;
+        qImage[x][y] = 0;
     }
 
     //std::ofstream outImg1("control_points.pbm");
@@ -245,14 +277,20 @@ int main(int argc, char* argv[])
     //outImg1.close();
 
     std::cout << "saving pgm file";
-    std::ofstream outImg("cb_interpolation.pgm");
-    outImg << "P2\n" << imgHeight << " " << imgWidth << std::endl << 2 << std::endl;
-    for (int i = 0; i < imgHeight; i++) {
-        for (int j = 0; j < imgWidth; j++) {
-            outImg << image[i][j]<< " ";
+    std::ofstream cOutImg("interpolation_cb.pgm");
+    std::ofstream qOutImg("interpolation_qb.pgm");
+
+    cOutImg << "P2\n" << size << " " << size << std::endl << 2 << std::endl;
+    qOutImg << "P2\n" << size << " " << size << std::endl << 2 << std::endl;
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            cOutImg << cImage[i][j]<< " ";
+            qOutImg << qImage[i][j] << " ";
        }
-        outImg << std::endl;
+        cOutImg << std::endl;
+        qOutImg << std::endl;
     }
 
-    outImg.close();
+    cOutImg.close();
+    qOutImg.close();
 }
