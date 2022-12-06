@@ -49,17 +49,7 @@ std::vector<std::vector<double>> qBezierParams(std::vector<double> p0, std::vect
     return bVec;
 }
 
-// from https://stackoverflow.com/questions/785097/how-do-i-implement-a-b%C3%A9zier-curve-in-c
 std::vector<double> qBezierInterpolation(std::vector<std::vector<double>> bVec, double t) {
-        // The Green Line
-       //double xa = getPt(bVec[0][0], bVec[1][0], t);
-       //double ya = getPt(bVec[0][1], bVec[1][1], t);
-       //double xb = getPt(bVec[1][0], bVec[2][0], t);
-       //double yb = getPt(bVec[1][1], bVec[2][1], t);
-
-       // // The Black Dot
-       //double x = getPt(xa, xb, t);
-       //double y = getPt(ya, yb, t);
        
        double temp = 1 - t;
        double tempSq = temp * temp;
@@ -70,7 +60,27 @@ std::vector<double> qBezierInterpolation(std::vector<std::vector<double>> bVec, 
        return { x,y };
 }
 
-std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vector<double> p1, std::vector<double> p2, double t) {
+std::vector<double> getB2Offset(int option, std::vector<double> p0, std::vector<double> p1, std::vector<double> p2) {
+    switch (option){
+    default:
+        return { p1[0] - p0[0], p1[1] - p0[1] };
+
+    case 1:
+        return { p2[0] - p1[0], p2[1] - p1[1] };
+
+    case 2:
+        return { p2[0] - p0[0], p2[1] - p0[1] };
+
+    case 3:
+        std::vector<double> retVec = { 0,0 };
+        for (int i = 0; i < 2; i++) {
+            retVec[i] = (p1[i] - p0[i] + p2[i] - p1[i] + p2[i] - p1[i]) / 3.0;
+        }
+        return retVec;
+    }
+}
+
+std::vector<std::vector<double>> cBezierParams(int option, std::vector<double> p0, std::vector<double> p1, std::vector<double> p2, double t) {
 
     std::vector<std::vector<double>> bVec(4);
 
@@ -84,11 +94,13 @@ std::vector<std::vector<double>> cBezierParams(std::vector<double> p0, std::vect
     double tcb = t * t * t;
     double tempSqT = tempSq * t;
 
+    std::vector<double> b2_offset = getB2Offset(option, p0, p1, p2);
+
     bVec[1] = { 0,0 };
     bVec[2] = { 0,0 };
     for (int i = 0; i < 2; i++) {
-        bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*p1[i] + t*p0[i];
-        bVec[2][i] = { bVec[1][i] + (p1[i] - p0[i])};
+        bVec[1][i] = (p1[i] - tempCb * p0[i] - tcb * p2[i])/(3*temp*t) - t*b2_offset[i];
+        bVec[2][i] = { bVec[1][i] + b2_offset[i]};
     }
 
     // less rounded option
@@ -142,6 +154,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    std::cout << "Reading...";
+
     // get curve data from file
     std::string path = "Data/";
     std::string fileName = path.append(argv[1]);
@@ -158,8 +172,8 @@ int main(int argc, char* argv[])
 
     // rescale all images to 255 x 255 for faster write to file
     size = (imgHeight > imgWidth) ? imgHeight : imgWidth;
-    double scale = 256.0 / size;
-    size = 256;
+    double scale = 512.0 / size;
+    size = 512;
 
     int numCurves;
     cp_file >> numCurves;
@@ -171,20 +185,22 @@ int main(int argc, char* argv[])
     cp_file >> numPoints;
 
     std::vector<double> point;
-    double x;
-    double y;
+    double col;
+    double row;
     std::vector<std::vector<double>> ctrlP;
 
     for(int i = 0; i < numPoints; i++){
-        cp_file >> x;
-        cp_file >> y;
-        point = { x*scale,y*scale };
+        cp_file >> col;
+        cp_file >> row;
+        point = { row*scale, col*scale };
         ctrlP.push_back(point);
     }
 
     // std::vector<std::vector<double>> cp = { {42, 42}, { 84,84 }, { 64, 42 }, { 168, 126 }, {84, 235} };
     /*const int height = 256;
     const int width = 256;*/
+
+    std::cout<<std::endl<<"Processing...";
 
     // intialize cubic bitmap and quadratic bitmap
 	int** cImage = new int*[size];
@@ -206,8 +222,8 @@ int main(int argc, char* argv[])
         double t2 = getReferenceT(ctrlP[i], ctrlP[i+1], ctrlP[i+2]); // .431378 seems ideal!!!
 
         // cubic - compute bezier control points
-        std::vector<std::vector<double>> cbVec1 = cBezierParams(ctrlP[i-1], ctrlP[i], ctrlP[i+1], t1);
-        std::vector<std::vector<double>> cbVec2 = cBezierParams(ctrlP[i], ctrlP[i+1], ctrlP[i+2], t2);
+        std::vector<std::vector<double>> cbVec1 = cBezierParams(option, ctrlP[i-1], ctrlP[i], ctrlP[i+1], t1);
+        std::vector<std::vector<double>> cbVec2 = cBezierParams(option, ctrlP[i], ctrlP[i+1], ctrlP[i+2], t2);
 
         // quadratic - compute bezier control points
         std::vector<std::vector<double>> qbVec1 = qBezierParams(ctrlP[i - 1], ctrlP[i], ctrlP[i + 1], t1);
@@ -293,7 +309,7 @@ int main(int argc, char* argv[])
     // color map
     std::vector<std::vector<int>> color_map = { { 0,0,0 }, { 255,0,0 }, {255, 255, 255} };
 
-    std::cout << "saving pgm file";
+    std::cout << std::endl << "Saving...";
     std::ofstream cOutImg("interpolation_cb.ppm");
     std::ofstream qOutImg("interpolation_qb.ppm");
 
