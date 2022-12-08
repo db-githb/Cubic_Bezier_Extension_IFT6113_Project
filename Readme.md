@@ -33,12 +33,13 @@ _cb and _qb are the blended interpolation using cubic Bezier and quadratic Bezie
 
 ## Input File Format
 1. Image size: rows x columns
-2. Option: see details below
+2. Option: [see details below](#options)
 3. Number of Points
 4. Curve Control Points: Column, Row (x,y) for each curve control point
-  1. Note: values must be within image size.  Not validated by code. 
+    1. Note: values must be within image size.  Not validated by code. 
 
 # Options
+Options number is a bit encoded set of options  
 
 Bits | Description
 -----|----
@@ -51,4 +52,7 @@ Bits | Description
  - 11 = avg + loop options
  - 7 = avg + show Bezier points
 
- # References:
+ # References
+ C. Yuksel, “A class of *C*<sup>2</sup> interpolating splines,” ACM Transactions on Graphics, vol. 39, no. 5, pp. 1–14, 2020.  
+ D. J. Walton and D. S. Meek, “Curvature extrema of planar parametric polynomial cubic curves,” Journal of Computational and Applied Mathematics, vol. 134, no. 1-2, pp. 69–83, 2001.   
+ Z. Yan, S. Schiller, G. Wilensky, N. Carr, and S. Schaefer, “&kappa;-curves,” ACM Transactions on Graphics, vol. 36, no. 4, pp. 1–7, 2017. 
