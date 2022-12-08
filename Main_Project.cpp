@@ -299,9 +299,9 @@ int main(int argc, char* argv[])
 
   // get curve data from file
   string path = "Data/";
-  string fileName = path.append(argv[1]);
+  string fileName = argv[1];
 
-  ifstream cp_file(fileName);
+  ifstream cp_file(path+fileName+".txt");
   bool isOpen = cp_file.is_open();
 
   int imgHeight;
@@ -313,9 +313,6 @@ int main(int argc, char* argv[])
   int size = (imgHeight > imgWidth) ? imgHeight : imgWidth;
   double scale = 512.0 / size;
   size = 512;
-
-  int numCurves;
-  cp_file >> numCurves;
 
   int option;
   cp_file >> option;
@@ -413,8 +410,10 @@ int main(int argc, char* argv[])
   vector<vector<int>> color_map = { { 0,0,0 }, { 255,0,0 }, {255, 255, 255}, {127, 127, 127}, {0, 0, 255} };
 
   std::cout << endl << "Saving...";
-  ofstream cOutImg("interpolation_cb.ppm");
-  ofstream qOutImg("interpolation_qb.ppm");
+  string outdir = "output/";
+  outdir.append(fileName);
+  ofstream cOutImg(outdir+"_cb.ppm");
+  ofstream qOutImg(outdir+"_qb.ppm");
 
   cOutImg << "P3\n" << size << " " << size << endl << 255 << endl;
   qOutImg << "P3\n" << size << " " << size << endl << 255 << endl;
