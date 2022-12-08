@@ -26,11 +26,17 @@ From main folder (IFT6113_Project) run executable as follows:
 
 > Debug\IFT6113_Project.exe InputFileName
 
-where InputFileName is the name of a file in the data file.  
+where InputFileName is the name of a file in the Data folder which has a .txt extension.  
+This generates files InputFileName_cb.ppm and InputFileName_qb.ppm in the Output folder.  
+These are image files in the portable pixmap format.  
+_cb and _qb are the blended interpolation using cubic Bezier and quadratic Bezier respectively.
 
 ## Input File Format
 1. Image size: rows x columns
-2. 
+2. Option: see details below
+3. Number of Points
+4. Curve Control Points: Column, Row (x,y) for each curve control point
+  1. Note: values must be within image size.  Not validated by code. 
 
 # Options
 
