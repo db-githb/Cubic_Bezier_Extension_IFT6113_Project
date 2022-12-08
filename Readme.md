@@ -53,6 +53,6 @@ Bits | Description
  - 7 = avg + show Bezier points
 
  # References
- C. Yuksel, “A class of *C*<sup>2</sup> interpolating splines,” ACM Transactions on Graphics, vol. 39, no. 5, pp. 1–14, 2020.  
- D. J. Walton and D. S. Meek, “Curvature extrema of planar parametric polynomial cubic curves,” Journal of Computational and Applied Mathematics, vol. 134, no. 1-2, pp. 69–83, 2001.   
- Z. Yan, S. Schiller, G. Wilensky, N. Carr, and S. Schaefer, “&kappa;-curves,” ACM Transactions on Graphics, vol. 36, no. 4, pp. 1–7, 2017. 
+ 1. C. Yuksel, “A class of *C*<sup>2</sup> interpolating splines,” ACM Transactions on Graphics, vol. 39, no. 5, pp. 1–14, 2020.  
+ 2. D. J. Walton and D. S. Meek, “Curvature extrema of planar parametric polynomial cubic curves,” Journal of Computational and Applied Mathematics, vol. 134, no. 1-2, pp. 69–83, 2001.   
+ 3. Z. Yan, S. Schiller, G. Wilensky, N. Carr, and S. Schaefer, “&kappa;-curves,” ACM Transactions on Graphics, vol. 36, no. 4, pp. 1–7, 2017. 
