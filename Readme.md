@@ -4,7 +4,7 @@ An implementation of Cem Yuksel's paper, "A Class of C2 Interpolating Spline" (2
 with an extension to use Cubic Bezier as an interpolating function  
 By Damian Bowness (20257155)  
 for Prof. Mikhail Bessmeltsev  
-U de M, Fall 2022  
+MILA, Fall 2022  
 
 # Contents
 - Data:  
